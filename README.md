@@ -12,3 +12,6 @@ EscapeWFP
 TreasureJS
   A simple game website mainly written in javascript.
   Requires a server to be hosted on (Live Server).
+
+wildlifeCPP
+  A simulation of tundra wildlife in C++.
