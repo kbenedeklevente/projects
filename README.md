@@ -14,4 +14,4 @@ TreasureJS
   Requires a server to be hosted on (Live Server).
 
 wildlifeCPP
-  A simulation of tundra wildlife in C++.
+  A simulation of tundra wildlife in C++ with Object-Oriented Programing elements.
