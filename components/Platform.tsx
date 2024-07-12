@@ -20,7 +20,7 @@ export default function Platform({
 }: PlatformProps) {
     return (
         <Animated.View
-            className="bg-blue-500 absolute rounded-md"
+            className="bg-blue-500 absolute rounded-sm"
             style={[
                 {
                     width: length,
