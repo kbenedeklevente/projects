@@ -23,53 +23,43 @@ export default function TabThreeScreen() {
     const [myNumber, setMyNumber] = useState(0);
     const [ballPos, setBallPos] = useState(initBallPosition);
 
-    const P1InitPosition = { x: screenWidth / 2 - PLATFORM_LENGTH1 / 2, y: screenHeight - OFFSET };
+    //const P1InitPosition = { x: screenWidth / 2 - PLATFORM_LENGTH1 / 2, y: screenHeight - OFFSET };
     const P2InitPosition = { x: screenWidth / 2 - PLATFORM_LENGTH2 / 2, y: OFFSET };
 
-    const panP1 = useRef(new Animated.ValueXY()).current;
+    //const panP1 = useRef(new Animated.ValueXY()).current;
     const panP2 = useRef(new Animated.ValueXY()).current;
 
     const clamp = (value: number, min: number, max: number) => Math.min(Math.max(value, min), max);
 
-    const panResponderP1 = useRef(
-        PanResponder.create({
-            onStartShouldSetPanResponder: (evt, gestureState) => true,
-            onStartShouldSetPanResponderCapture: (evt, gestureState) =>
-              true,
-            onMoveShouldSetPanResponder: (evt, gestureState) => true,
-            onMoveShouldSetPanResponderCapture: (evt, gestureState) =>
-              true,
-            onPanResponderGrant: (evt) => {
-                const touchX = evt.nativeEvent.pageX;
-                const newX = clamp(
-                    touchX - PLATFORM_LENGTH1 / 2,
-                    0,
-                    screenWidth - PLATFORM_LENGTH1
-                );
-                panP1.x.setValue(newX - P1InitPosition.x);
-            },
-            onPanResponderMove: (_, gestureState) => {
-                const newX = clamp(
-                    P1InitPosition.x + gestureState.dx,
-                    0,
-                    screenWidth - PLATFORM_LENGTH1
-                );
-                panP1.x.setValue(newX - P1InitPosition.x);
-            },
-            onPanResponderRelease: () => {
-                panP1.flattenOffset();
-            },
-        })
-    ).current;
+    //const panResponderP1 = useRef(
+    //    PanResponder.create({
+    //        onStartShouldSetPanResponder: () => true,
+    //        onPanResponderGrant: (evt) => {
+    //            const touchX = evt.nativeEvent.pageX;
+    //            const newX = clamp(
+    //                touchX - PLATFORM_LENGTH1 / 2,
+    //                0,
+    //                screenWidth - PLATFORM_LENGTH1
+    //            );
+    //            panP1.x.setValue(newX - P1InitPosition.x);
+    //        },
+    //        onPanResponderMove: (_, gestureState) => {
+    //            const newX = clamp(
+    //                P1InitPosition.x + gestureState.dx,
+    //                0,
+    //                screenWidth - PLATFORM_LENGTH1
+    //            );
+    //            panP1.x.setValue(newX - P1InitPosition.x);
+    //        },
+    //        onPanResponderRelease: () => {
+    //            panP1.flattenOffset();
+    //        },
+    //    })
+    //).current;
 
     const panResponderP2 = useRef(
         PanResponder.create({
-            onStartShouldSetPanResponder: (evt, gestureState) => true,
-            onStartShouldSetPanResponderCapture: (evt, gestureState) =>
-              true,
-            onMoveShouldSetPanResponder: (evt, gestureState) => true,
-            onMoveShouldSetPanResponderCapture: (evt, gestureState) =>
-              true,
+            onStartShouldSetPanResponder: () => true,
             onPanResponderGrant: (evt) => {
                 const touchX = evt.nativeEvent.pageX;
                 const newX = clamp(
@@ -96,17 +86,11 @@ export default function TabThreeScreen() {
     const function1 = () => {
         setMyNumber(myNumber + 1);
     }
+    
     return (
         <View className="flex-1" style={styles.container} >
             <Stack.Screen options={{ headerShown: false }} />
             <Ball size={BALL_SIZE} position={initBallPosition} />
-            <Platform
-                length={PLATFORM_LENGTH1}
-                height={PLATFORM_HEIGHT}
-                initPosition={P1InitPosition}
-                panHandlers={panResponderP1.panHandlers}
-                pan={panP1}
-            />
             <Platform
                 length={PLATFORM_LENGTH2}
                 height={PLATFORM_HEIGHT}
