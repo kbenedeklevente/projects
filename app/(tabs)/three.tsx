@@ -1,21 +1,119 @@
-import { StyleSheet, Button, Alert } from 'react-native';
-import React, { useState } from 'react';
-import ActionButton from '@/components/ActionButton';
-
-import EditScreenInfo from '@/components/EditScreenInfo';
+import { StyleSheet, Button, Alert, Dimensions, Animated, PanResponder } from 'react-native';
+import React, { useRef, useState } from 'react';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import Ball from '@/components/Ball';
+import Platform from '@/components/Platform';
 import { Text, View } from '@/components/Themed';
 
+import { Stack } from 'expo-router';
+
 export default function TabThreeScreen() {
+    const window = Dimensions.get('window');
+    const insets = useSafeAreaInsets();
+    const screenWidth = window.width;
+    const screenHeight = window.height - insets.top - insets.bottom - 50;
+
+    const OFFSET = 35;
+    const BALL_SIZE = 50;
+    const initBallPosition = { x: screenWidth / 2 - BALL_SIZE / 2, y: screenHeight / 2 - BALL_SIZE / 2 };
+    const PLATFORM_HEIGHT = 20;
+    const PLATFORM_LENGTH1 = 100;
+    const PLATFORM_LENGTH2 = 100;
+
     const [myNumber, setMyNumber] = useState(0);
+    const [ballPos, setBallPos] = useState(initBallPosition);
+
+    const P1InitPosition = { x: screenWidth / 2 - PLATFORM_LENGTH1 / 2, y: screenHeight - OFFSET };
+    const P2InitPosition = { x: screenWidth / 2 - PLATFORM_LENGTH2 / 2, y: OFFSET };
+
+    const panP1 = useRef(new Animated.ValueXY()).current;
+    const panP2 = useRef(new Animated.ValueXY()).current;
+
+    const clamp = (value: number, min: number, max: number) => Math.min(Math.max(value, min), max);
+
+    const panResponderP1 = useRef(
+        PanResponder.create({
+            onStartShouldSetPanResponder: (evt, gestureState) => true,
+            onStartShouldSetPanResponderCapture: (evt, gestureState) =>
+              true,
+            onMoveShouldSetPanResponder: (evt, gestureState) => true,
+            onMoveShouldSetPanResponderCapture: (evt, gestureState) =>
+              true,
+            onPanResponderGrant: (evt) => {
+                const touchX = evt.nativeEvent.pageX;
+                const newX = clamp(
+                    touchX - PLATFORM_LENGTH1 / 2,
+                    0,
+                    screenWidth - PLATFORM_LENGTH1
+                );
+                panP1.x.setValue(newX - P1InitPosition.x);
+            },
+            onPanResponderMove: (_, gestureState) => {
+                const newX = clamp(
+                    P1InitPosition.x + gestureState.dx,
+                    0,
+                    screenWidth - PLATFORM_LENGTH1
+                );
+                panP1.x.setValue(newX - P1InitPosition.x);
+            },
+            onPanResponderRelease: () => {
+                panP1.flattenOffset();
+            },
+        })
+    ).current;
+
+    const panResponderP2 = useRef(
+        PanResponder.create({
+            onStartShouldSetPanResponder: (evt, gestureState) => true,
+            onStartShouldSetPanResponderCapture: (evt, gestureState) =>
+              true,
+            onMoveShouldSetPanResponder: (evt, gestureState) => true,
+            onMoveShouldSetPanResponderCapture: (evt, gestureState) =>
+              true,
+            onPanResponderGrant: (evt) => {
+                const touchX = evt.nativeEvent.pageX;
+                const newX = clamp(
+                    touchX - PLATFORM_LENGTH1 / 2,
+                    0,
+                    screenWidth - PLATFORM_LENGTH1
+                );
+                panP2.x.setValue(newX - P2InitPosition.x);
+            },
+            onPanResponderMove: (_, gestureState) => {
+                const newX = clamp(
+                    P2InitPosition.x + gestureState.dx,
+                    0,
+                    screenWidth - PLATFORM_LENGTH2
+                );
+                panP2.x.setValue(newX - P2InitPosition.x);
+            },
+            onPanResponderRelease: () => {
+                panP2.flattenOffset();
+            },
+        })
+    ).current;
+
+    const function1 = () => {
+        setMyNumber(myNumber + 1);
+    }
     return (
-        <View style={styles.container}>
-            
-            <Text style={styles.title}>Tab Three</Text>
-            <View style={styles.separator} lightColor="#eee" darkColor="rgba(255,255,255,0.1)" />
-            <EditScreenInfo path="app/(tabs)/three.tsx" />
-            <ActionButton title="Joe" onPress={() => setMyNumber(myNumber + 1)}/>
-            <View style={styles.separator} lightColor="#eee" darkColor="rgba(255,255,255,0.1)" />
-            <Text style={{ fontSize: 32 }}>{myNumber}</Text>
+        <View className="flex-1" style={styles.container} >
+            <Stack.Screen options={{ headerShown: false }} />
+            <Ball size={BALL_SIZE} position={initBallPosition} />
+            <Platform
+                length={PLATFORM_LENGTH1}
+                height={PLATFORM_HEIGHT}
+                initPosition={P1InitPosition}
+                panHandlers={panResponderP1.panHandlers}
+                pan={panP1}
+            />
+            <Platform
+                length={PLATFORM_LENGTH2}
+                height={PLATFORM_HEIGHT}
+                initPosition={P2InitPosition}
+                panHandlers={panResponderP2.panHandlers}
+                pan={panP2}
+            />
         </View>
     );
 }
