@@ -1,12 +1,18 @@
-import { StyleSheet, Button, Alert, Dimensions, Animated, PanResponder, Easing } from 'react-native';
-import React, { useRef, useState, useEffect } from 'react';
+import { StyleSheet, Dimensions, Animated, PanResponder, Easing } from 'react-native';
+import React, { useRef, useState, useEffect, useCallback } from 'react';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Ball from '@/components/Ball';
 import Platform from '@/components/Platform';
-import { Text, View } from '@/components/Themed';
-
+import { View } from '@/components/Themed';
 import { Stack } from 'expo-router';
 import ActionButton from '@/components/ActionButton';
+
+type Ball = {
+    position: { x: number; y: number };
+    direction: { x: number; y: number };
+    movement: Animated.ValueXY;
+    color: string;
+};
 
 export default function TabThreeScreen() {
     const window = Dimensions.get('window');
@@ -38,95 +44,103 @@ export default function TabThreeScreen() {
 
     const gameSpeed = 10;
 
-    const [balls, setBalls] = useState<{ position: { x: number; y: number; }; direction: { x: number; y: number; }; movement: Animated.ValueXY; color: string }[]>([]);
-    const [showAddButton, setShowAddButton] = useState(true);
-
     const P2InitPosition = { x: screenWidth / 2 - PLATFORM_LENGTH2 / 2, y: OFFSET };
     const PlayerPosition = useRef({ x: 0, y: screenHeight / 2 - PLATFORM_HEIGHT });
     const panP2 = useRef(new Animated.ValueXY()).current;
 
-    const initBall = () => ({
+    const [balls, setBalls] = useState<Ball[]>([]);
+    const [showAddButton, setShowAddButton] = useState(true);
+
+    const animationRef = useRef<null | number>(null);
+
+    const initBall = useCallback((): Ball => ({
         position: initBallPosition,
         direction: { x: getRandomBetween(-1, 1), y: getRandomBetween(-1, 1) },
         movement: new Animated.ValueXY(initBallPosition),
         color: getRandomColor()
-    });
+    }), []);
 
-    const addBall = () => {
+    const addBall = useCallback(() => {
         setBalls(prevBalls => [...prevBalls, initBall()]);
         setShowAddButton(false);
-    };
+    }, [initBall]);
 
     useEffect(() => {
-        const interval = setInterval(moveBalls, 16); // Approximately 60 FPS
-        return () => clearInterval(interval);
+        const animate = () => {
+            moveBalls();
+            animationRef.current = requestAnimationFrame(animate);
+        };
+        animationRef.current = requestAnimationFrame(animate);
+        return () => {
+            if (animationRef.current) {
+                cancelAnimationFrame(animationRef.current);
+            }
+        };
     }, []);
 
     useEffect(() => {
         setShowAddButton(balls.length === 0);
     }, [balls]);
 
-    const handlePlatformCollision = (ball: any) => {
-        ball.direction.y *= -1;
-        ball.position.y = PlayerPosition.current.y - BALL_SIZE / 2;
-        ball.direction.x = getRandomBetween(-0.25, 0.25);
-        ball.direction.x = Math.max(-1, Math.min(1, ball.direction.x));
-        return true;
-    };
-
-    const moveBalls = () => {
+    const moveBalls = useCallback(() => {
         setBalls(prevBalls => {
             let shouldAddNewBall = false;
             const updatedBalls = prevBalls.map((ball) => {
                 let newX = ball.position.x + ball.direction.x * gameSpeed;
                 let newY = ball.position.y + ball.direction.y * gameSpeed;
-    
+
                 // Platform collision detection
                 const platformY = PlayerPosition.current.y;
                 const platformLeftX = PlayerPosition.current.x - PLATFORM_LENGTH2 / 2;
                 const platformRightX = PlayerPosition.current.x + PLATFORM_LENGTH2 / 2;
-    
+
                 if (newY + BALL_SIZE / 2 >= platformY &&
                     newY - BALL_SIZE / 2 <= platformY + PLATFORM_HEIGHT &&
                     newX + BALL_SIZE / 2 >= platformLeftX &&
                     newX - BALL_SIZE / 2 <= platformRightX) {
-                        shouldAddNewBall = handlePlatformCollision(ball);
-                }
-    
-                // Wall collisions
-                if (newX <= -screenWidth / 2 + BALL_SIZE / 2 || newX >= screenWidth / 2 - BALL_SIZE / 2) {
-                    ball.direction.x *= -1;
-                    newX = Math.max(-screenWidth / 2 + BALL_SIZE / 2, Math.min(newX, screenWidth / 2 - BALL_SIZE / 2));
-                }
-                if (newY <= -screenHeight / 2 + BALL_SIZE / 2) {
                     ball.direction.y *= -1;
-                    newY = -screenHeight / 2 + BALL_SIZE / 2;
+                    ball.direction.x =  getRandomBetween(-0.25, 0.25);
+                    newY = PlayerPosition.current.y - BALL_SIZE/2;
+                    shouldAddNewBall = true;
                 }
-    
+
+                // Wall collisions
+                else {
+                    if (newX <= -screenWidth / 2 + BALL_SIZE / 2 || newX >= screenWidth / 2 - BALL_SIZE / 2) {
+                        ball.direction.x *= -1;
+                        newX = Math.max(-screenWidth / 2 + BALL_SIZE / 2, Math.min(newX, screenWidth / 2 - BALL_SIZE / 2));
+                    }
+                    if (newY <= -screenHeight / 2 + BALL_SIZE / 2) {
+                        ball.direction.y *= -1;
+                        newY = -screenHeight / 2 + BALL_SIZE / 2;
+                    }
+                }
+
                 ball.position = { x: newX, y: newY };
-    
+
                 Animated.timing(ball.movement, {
                     toValue: ball.position,
                     duration: 2,
                     easing: Easing.linear,
                     useNativeDriver: true,
                 }).start();
-    
+
                 return ball;
             });
-    
+
             // Filter out balls that are out of bounds and add a new ball if needed
-            const filteredBalls = updatedBalls.filter(ball => 
+            const filteredBalls = updatedBalls.filter(ball =>
                 ball.position.y < screenHeight / 2 - BALL_SIZE / 2
             );
-    
+
             if (shouldAddNewBall) {
                 filteredBalls.push(initBall());
             }
-    
+
             return filteredBalls;
         });
-    };
+    }, [initBall, screenWidth, screenHeight]);
+
     const panResponderP2 = useRef(
         PanResponder.create({
             onStartShouldSetPanResponder: () => true,
@@ -155,15 +169,17 @@ export default function TabThreeScreen() {
         })
     ).current;
 
+    const renderBall = useCallback(({ item, index }: { item: Ball, index: number }) => (
+        <Ball key={index} size={BALL_SIZE} position={item.movement} color={item.color} />
+    ), []);
+
     return (
-        <View className="flex-1" style={styles.container} >
+        <View style={styles.container}>
             <Stack.Screen options={{ headerShown: false }} />
-            {balls.map((ball, index) => (
-                <Ball key={index} size={BALL_SIZE} position={ball.movement} color={ball.color} />
-            ))}
+            {balls.map((ball, index) => renderBall({ item: ball, index }))}
             {showAddButton && (
                 <ActionButton
-                    title="Add Ball"
+                    title="Start Game"
                     onPress={addBall}
                 />
             )}

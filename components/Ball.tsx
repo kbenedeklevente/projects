@@ -1,22 +1,33 @@
 import React from 'react';
-import { Animated } from 'react-native';
+import { Animated, ViewStyle } from 'react-native';
 
-export default function Ball(props: { 
-    size?: number, 
-    position?: Animated.ValueXY ,
-    color?: string,
-}) {
-    const { size = 10, position = new Animated.ValueXY({x: 0, y: 0}), color = 'red'} = props;
-    
+interface BallProps {
+    size?: number;
+    position?: Animated.ValueXY;
+    color?: string;
+}
+
+const Ball: React.FC<BallProps> = React.memo(({ 
+    size = 10, 
+    position = new Animated.ValueXY({x: 0, y: 0}), 
+    color = 'red'
+}) => {
+    const ballStyle: ViewStyle = {
+        width: size,
+        height: size,
+        backgroundColor: color,
+        borderRadius: size / 2,
+        position: 'absolute',
+    };
+
     return (
         <Animated.View
-            className="rounded-full absolute"
-            style={{
-                width: size,
-                height: size,
-                backgroundColor: color,
-                transform: position.getTranslateTransform(),
-            }}
+            style={[
+                ballStyle,
+                { transform: position.getTranslateTransform() }
+            ]}
         />
     );
-}
+});
+
+export default Ball;
